@@ -61,6 +61,8 @@ POWER does today.
       updating; the title shows that the list is paused. And `f` turning the filter off and on
       again without retyping it, to look outside it for a moment: the filter text stays, faint,
       while it is off.
+      Plan (filter off/on; separate PR):
+      [docs/plans/20261016-filter-switch.md](plans/20261016-filter-switch.md).
 - [ ] **11. Who has a file open.** A view of the open files of all processes with the filter,
       to find who reads or writes a file or holds a port (Sloth's main window, `lsof <path>`).
       Without root libproc reads only the user's own processes; other users' processes are
