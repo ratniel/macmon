@@ -61,7 +61,7 @@ POWER does today.
       the title shows `paused`. The info overlay holds its files/socket snapshot. Sloth has a
       pause feature. Separately, `f` should turn the filter off and on while preserving its text.
       Plan (pause ordering with live process metrics; first PR):
-      [docs/plans/20261016-pause-order.md](plans/20261016-pause-order.md).
+      [docs/plans/completed/20261016-pause-order.md](plans/completed/20261016-pause-order.md).
 - [ ] **11. Who has a file open.** A view of the open files of all processes with the filter,
       to find who reads or writes a file or holds a port (Sloth's main window, `lsof <path>`).
       Without root libproc reads only the user's own processes; other users' processes are

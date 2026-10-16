@@ -1,3 +1,5 @@
+Done: 2026-10-16, PR #1
+
 # Pause process ordering (roadmap item 10, first PR)
 
 Hold process rows in place for keyboard browsing while their metrics remain live. Filter
@@ -26,7 +28,7 @@ off/on is a separate PR and remains unfinished in roadmap item 10. Aim at no mor
 - Both titles show `paused`; explain in help that process values remain live. Preserve the
   indicator at narrow widths and use the existing terminal theme.
 
-## Proposed interaction details
+## Interaction details
 
 - Existing filter editing remains live while paused and may deliberately change which rows
   are visible. Status prefixes are display text, not additions to the underlying name or
@@ -58,9 +60,19 @@ off/on is a separate PR and remains unfinished in roadmap item 10. Aim at no mor
 - [x] Implement overlay pause and title indicators; update help and README in the same change.
 - [x] Test resume, PID reuse where start time exists, new-then-exited rows, totals, filter
       typing, sort changes, hiding, narrow layouts and continuing system metric updates.
-- [ ] Run `make check`, `make test` and production line measurement; manually exercise arrow
+- [x] Run `make check`, `make test` and production line measurement; manually exercise arrow
       browsing and pause/resume with temporary settings isolated from the person's config.
-- [ ] Review the diff, commit passing steps and open the PR against the person's fork.
+- [x] Review the diff, commit passing steps and open the PR against the person's fork.
       Complete the repository's review workflow and record the final PR number and result
       before moving this plan to `docs/plans/completed/` and fixing its roadmap link. Keep
       item 10 unchecked because filter off/on remains a separate PR.
+
+## Result
+
++102 production lines, entirely in the TUI. PR #1 targets `ratniel/macmon`, not upstream.
+Order pause, live metrics, retained exits, appended new rows and overlay pause are implemented;
+filter off/on remains for a separate PR. `make check` and `make test` passed independently
+(42 library, 148 binary, 3 doc tests). A native M4 terminal smoke check at 250 ms exercised
+arrow browsing, live values, lifecycle markers, resume and shared overlay pause with settings
+disabled. Independent review found no actionable issues; the required Codex CLI review was
+attempted but unavailable because the configured model was rejected for the account.
