@@ -1680,6 +1680,9 @@ mod tests {
     assert!(app.handle_key(key('/')).is_continue());
     assert!(app.handle_key(key(' ')).is_continue());
     assert!(app.proc_view.paused, "Space in a filter is text");
+    let mut term = Terminal::new(TestBackend::new(20, 20)).unwrap();
+    term.draw(|f| app.info.as_mut().unwrap().render(f, f.area(), true)).unwrap();
+    assert!(row(term.backend().buffer(), 19).contains("paused"));
     assert!(press(&mut app, KeyCode::Esc).is_continue());
     for width in [200, 60, 20] {
       let mut term = Terminal::new(TestBackend::new(width, 20)).unwrap();
@@ -1692,7 +1695,7 @@ mod tests {
   }
 
   #[test]
-  fn paused_rows_show_markers_safe_actions_and_indicator_with_filters() {
+  fn paused_rows_dim_exits_preserve_safe_actions_and_indicator_with_filters() {
     let (mut app, fake) = info_app();
     assert!(app.handle_key(key(' ')).is_continue());
     let mut procs = varied_procs();
@@ -1704,21 +1707,39 @@ mod tests {
     put_procs(&mut app, procs);
     let buf = render_buffer(&mut app, 200, 50);
     let exited = proc_row(&buf, 2);
-    assert!(exited.contains("(exited) WindowServer"), "{exited}");
+    assert!(exited.contains("WindowServer") && !exited.contains("(exited)"), "{exited}");
     assert_eq!(exited.split_whitespace().filter(|s| *s == "-").count(), 5);
-    assert!(proc_row(&buf, 5).contains("(new) new worker"));
+    assert!(!screen_text(&buf).contains("new worker"));
+    assert!(buf[(2, PROC_Y + 2)].modifier.contains(Modifier::REVERSED));
+    assert!(!buf[(2, PROC_Y + 2)].modifier.contains(Modifier::DIM));
+    assert!(press(&mut app, KeyCode::Down).is_continue());
+    let dimmed = render_buffer(&mut app, 200, 50);
+    assert!(dimmed[(2, PROC_Y + 2)].modifier.contains(Modifier::DIM));
+    assert!(press(&mut app, KeyCode::Up).is_continue());
+    for width in [200, 60, 30, 20, 12] {
+      let mut term = Terminal::new(TestBackend::new(width, 50)).unwrap();
+      term.draw(|f| app.render_proc_box(f, f.area())).unwrap();
+      let buf = term.backend().buffer();
+      let footer = row(buf, 49);
+      assert!(footer.contains("paused"), "{width}: {footer}");
+      let x = footer[..footer.find("paused").unwrap()].chars().count() as u16;
+      assert_eq!(buf[(x, 49)].fg, ratatui::style::Color::Yellow);
+      assert!(buf[(x, 49)].modifier.contains(Modifier::BOLD));
+    }
     for c in ['i', 'k'] {
       assert!(app.handle_key(key(c)).is_continue());
     }
     assert!(app.info.is_none() && !app.kill.is_open() && fake.calls().is_empty());
     assert!(app.handle_key(key('c')).is_continue());
     assert_eq!(fake.0.borrow().copied, [WINDOW_SERVER]);
+    let footer = row(&render_buffer(&mut app, 200, 50), 49);
+    assert!(footer.contains("copied") && footer.contains("paused"));
     for c in "/this is a very long filter".chars() {
       assert!(app.handle_key(key(c)).is_continue());
     }
     assert!(app.handle_key(key(' ')).is_continue());
     assert!(app.proc_view.paused && app.proc_view.filter().ends_with(' '));
-    assert!(proc_row(&render_buffer(&mut app, 30, 50), 0).contains("paused"));
+    assert!(row(&render_buffer(&mut app, 30, 50), 49).contains("paused"));
     assert!(press(&mut app, KeyCode::Enter).is_continue());
     assert!(app.handle_key(key('?')).is_continue());
     assert!(app.handle_key(key(' ')).is_continue() && app.proc_view.paused);

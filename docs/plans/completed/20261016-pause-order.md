@@ -1,5 +1,8 @@
 Done: 2026-10-16, PR #1
 
+Historical fork plan. The combined [item 10 plan](../20261017-pause-review.md) defines
+the revised behavior for upstream PR #108.
+
 # Pause process ordering (roadmap item 10, first PR)
 
 Hold process rows in place for keyboard browsing while their metrics remain live. Filter
