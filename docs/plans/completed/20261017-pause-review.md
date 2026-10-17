@@ -1,3 +1,5 @@
+Done: 2026-10-17, PR #3 (ratniel/macmon)
+
 # Pause and toggle saved filters (roadmap item 10)
 
 Combined plan for upstream [PR #108](https://github.com/vladkens/macmon/pull/108), including
@@ -6,8 +8,8 @@ tests locally and merges the fork PR before any upstream update. Reuse ProcInfo 
 existing sort functions; no new dependency, settings format, JSON, Prometheus or library API.
 
 Historical fork implementation plans remain in
-[20261016-pause-order.md](completed/20261016-pause-order.md) and
-[20261016-filter-switch.md](completed/20261016-filter-switch.md). This plan defines the
+[20261016-pause-order.md](20261016-pause-order.md) and
+[20261016-filter-switch.md](20261016-filter-switch.md). This plan defines the
 combined behavior for upstream; their old lifecycle and sort decisions are superseded.
 
 ## Behavior
@@ -35,4 +37,13 @@ combined behavior for upstream; their old lifecycle and sort decisions are super
 - [x] Update exited styling and pause indicator with rendering and safe-action coverage.
 - [x] Update help, README, roadmap and combined upstream item 10 plan.
 - [x] Run make check, make test and production-line measurement; independently review.
-- [ ] Open a PR against the fork for the person's local testing and merge.
+- [x] Open a PR against the fork for the person's local testing and merge.
+
+## Result
+
+Fork [PR #3](https://github.com/ratniel/macmon/pull/3) implements these review fixes using
+existing row storage and sorting, with five fewer production lines. `make check` and all
+202 tests passed, including startup, explicit sorts, membership, PID reuse and rendering.
+Independent code review found no actionable issues; the additional Codex CLI review could
+not run because its configured model was rejected for this account. Live TUI testing and
+merge are left to the person. Upstream PR #108 remains unchanged pending their confirmation.

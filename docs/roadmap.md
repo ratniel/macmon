@@ -61,7 +61,7 @@ POWER does today.
       dimmed; new processes appear after resume. Bold yellow `paused` sits on the bottom border.
       The info overlay holds its files/socket snapshot. `f` turns each view's filter off and on
       while preserving its text. Upstream PR: [#108](https://github.com/vladkens/macmon/pull/108).
-      Plan: [docs/plans/20261017-pause-review.md](plans/20261017-pause-review.md).
+      Plan: [docs/plans/completed/20261017-pause-review.md](plans/completed/20261017-pause-review.md).
 - [ ] **11. Who has a file open.** A view of the open files of all processes with the filter,
       to find who reads or writes a file or holds a port (Sloth's main window, `lsof <path>`).
       Without root libproc reads only the user's own processes; other users' processes are
