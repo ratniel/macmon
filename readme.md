@@ -81,11 +81,11 @@ Options:
 
 Run `macmon` without a subcommand to open the terminal UI: the metric boxes on top and the process list below. Press `?` in the app to see the keys.
 
-Press `Space` to hold process rows in place while their values and system metrics keep updating. Exited rows stay as `(exited)` with unavailable values shown as `-`; new processes append as `(new)`. Press `Space` again to restore sorting and clear the markers.
+Press `Space` to pause the process list while its values and system metrics keep updating. The rows stay in place; exited processes are dimmed with unavailable values shown as `-`. New processes appear on the next sample after resuming. Press `Space` again to resume. A bold yellow `paused` on the bottom border shows when the list is paused.
 
-Sorting changes while paused apply on resume. The info overlay holds its file/socket snapshot while paused; Space there controls the same pause. Hiding the process panel resets pause. Process identities use PID and available start time; other users’ processes lack start times, so their PID reuse cannot be detected.
+Click a column header, or use `s` / `S`, to sort once while staying paused. If you pause before the first sample arrives, that sample becomes the sorted starting list. The info overlay holds its file/socket snapshot while paused; Space there controls the same pause. Hiding the process panel resets pause. Process identities use PID and available start time; other users’ processes lack start times, so their PID reuse cannot be detected.
 
-Press `/` to filter the process list. A filter is a comma-separated list of terms, each matched case-insensitively against the process name or pid: `safari, cargo` shows processes matching any term, and a term starting with `!` hides its matches (`chrome, !helper`). `Enter` keeps the filter, `Esc` clears it.
+Press `/` to filter the process list. A filter is a comma-separated list of terms, each matched case-insensitively against the process name or pid: `safari, cargo` shows processes matching any term, and a term starting with `!` hides its matches (`chrome, !helper`). `Enter` keeps the filter, `Esc` clears it. Press `f` outside filter input to turn the filter off or on without losing its text; the saved text is faint while the filter is off. The process list and file overlay have separate filters. Press `/` to enable and edit the current filter again.
 
 ### JSON output
 

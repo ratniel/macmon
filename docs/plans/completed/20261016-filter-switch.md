@@ -1,5 +1,8 @@
 Done: 2026-10-16, PR #2
 
+Historical fork plan. The combined [item 10 plan](20261017-pause-review.md) defines
+the revised behavior for upstream PR #108.
+
 # Toggle saved filters (roadmap item 10, filter PR)
 
 Temporarily see the unfiltered list without losing the query. This PR is independent of the

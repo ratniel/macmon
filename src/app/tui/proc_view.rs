@@ -353,7 +353,6 @@ pub(super) fn filter_titles(
   typing: bool,
   enabled: bool,
   width: u16,
-  paused: bool,
 ) -> Titles<'static> {
   if !typing && filter.is_empty() {
     return Titles::new(name).left(hint("/", "filter"));
@@ -361,8 +360,6 @@ pub(super) fn filter_titles(
   let beside = title_text_room(width, &[Line::from(name.clone())]);
   if beside >= FILTER_MIN_WIDTH {
     Titles::new(name).left(filter_title(filter, typing, enabled, beside))
-  } else if paused {
-    Titles::new(name)
   } else {
     Titles::new(filter_title(filter, typing, enabled, title_text_room(width, &[])))
   }
@@ -515,7 +512,6 @@ struct Targets {
 #[derive(Debug)]
 pub(super) struct ProcView {
   pub(super) paused: bool,
-  new: HashSet<Identity>,
   exited: HashSet<Identity>,
   pub(super) sort: ProcSort,
   pub(super) sort_desc: bool,
@@ -551,7 +547,6 @@ impl ProcView {
   pub(super) fn new(sort: ProcSort, sort_desc: bool) -> Self {
     Self {
       paused: false,
-      new: HashSet::new(),
       exited: HashSet::new(),
       sort,
       sort_desc,
@@ -637,16 +632,16 @@ impl ProcView {
       if let Some(procs) = &mut self.procs {
         procs.retain(|p| !self.exited.contains(&identity(p)));
       }
-      self.new.clear();
       self.exited.clear();
     }
-    self.refresh();
+    self.refresh(false);
   }
 
-  /// Updates live values without moving paused rows; otherwise replaces the sample.
+  /// Updates held processes by identity while paused, ignoring arrivals; the first sample
+  /// initializes a sorted list even if Space was pressed during collection.
   pub(super) fn set_procs(&mut self, procs: Vec<ProcInfo>) {
-    if self.paused {
-      let held = self.procs.get_or_insert_default();
+    let first_sample = self.procs.is_none();
+    if let (true, Some(held)) = (self.paused, &mut self.procs) {
       let indices: HashMap<_, _> = held.iter().enumerate().map(|(i, p)| (identity(p), i)).collect();
       self.exited = indices.keys().copied().collect();
       for proc in procs {
@@ -654,15 +649,12 @@ impl ProcView {
         self.exited.remove(&key);
         if let Some(&i) = indices.get(&key) {
           held[i] = proc;
-        } else {
-          self.new.insert(key);
-          held.push(proc);
         }
       }
     } else {
       self.procs = Some(procs);
     }
-    self.refresh();
+    self.refresh(first_sample);
   }
 
   /// Drops the list, ends filter input and forgets the mouse targets (the panel got hidden). The
@@ -670,18 +662,18 @@ impl ProcView {
   pub(super) fn clear(&mut self) {
     self.procs = None;
     self.paused = false;
-    self.new.clear();
     self.exited.clear();
     self.typing = false;
     self.targets = Targets::default();
-    self.refresh();
+    self.refresh(false);
   }
 
-  /// Re-filters and, unless paused, re-sorts. Selection follows identity, and is dropped when that
-  /// process is gone or filtered out.
-  fn refresh(&mut self) {
+  /// Re-filters and sorts on live samples or explicit requests. Selection follows identity,
+  /// and is dropped when that process is gone or filtered out.
+  fn refresh(&mut self, sort_requested: bool) {
+    let sort_now = !self.paused || sort_requested;
     let procs = self.procs.as_deref_mut().unwrap_or_default();
-    if !self.paused {
+    if sort_now {
       sort_procs(procs, self.sort, self.sort_desc);
     }
 
@@ -692,13 +684,13 @@ impl ProcView {
       .iter()
       .map(|term| Group::sum(term, self.rows().filter(|p| !self.exited(p) && hit(p, term))));
     let mut groups: Vec<_> = groups.collect();
-    if self.paused {
+    if !sort_now {
       groups.sort_by_key(|g| {
         self.groups.iter().position(|old| old.term == g.term).unwrap_or(usize::MAX)
       });
     }
     self.groups = groups;
-    if !self.paused {
+    if sort_now {
       sort_groups(&mut self.groups, self.sort, self.sort_desc);
     }
 
@@ -773,18 +765,18 @@ impl ProcView {
     match key.code {
       _ if self.typing => {
         if type_filter(&mut self.filter, &mut self.typing, key) {
-          self.refresh();
+          self.refresh(false);
         }
       }
       KeyCode::Char(' ') => self.toggle_pause(),
       KeyCode::Char('/') => {
         self.filter_enabled = true;
         self.typing = true;
-        self.refresh();
+        self.refresh(false);
       }
       KeyCode::Char('f') if !self.filter.is_empty() => {
         self.filter_enabled = !self.filter_enabled;
-        self.refresh();
+        self.refresh(false);
       }
       KeyCode::Char('f') => {}
       KeyCode::Char('S') => self.reverse_sort(),
@@ -794,7 +786,7 @@ impl ProcView {
         self.selected = None;
         self.filter.clear();
         self.offset = 0;
-        self.refresh();
+        self.refresh(false);
       }
       _ => return false,
     }
@@ -804,7 +796,7 @@ impl ProcView {
 
   fn reverse_sort(&mut self) {
     self.sort_desc = !self.sort_desc;
-    self.refresh();
+    self.refresh(true);
   }
 
   /// Sorts by `sort` in its own direction (`ProcSort::sorts_desc`); the current sort key reverses
@@ -816,7 +808,7 @@ impl ProcView {
       self.sort = sort;
       self.sort_desc = sort.sorts_desc();
     }
-    self.refresh();
+    self.refresh(true);
   }
 
   /// `s`: the next column on screen in the `ProcSort::next` cycle.
@@ -893,10 +885,7 @@ impl ProcView {
       name.push(text(count));
     }
 
-    if self.paused {
-      name.splice(0..0, [heading("paused"), text(" · ")]);
-    }
-    let titles = filter_titles(name, &self.filter, self.typing, self.filter_enabled, width, self.paused);
+    let titles = filter_titles(name, &self.filter, self.typing, self.filter_enabled, width);
     let actions =
       || join([hint("i", "info"), hint("e", "finder"), hint("c", "copy"), hint("k", "kill")]);
     match self.typing {
@@ -939,7 +928,11 @@ impl App {
 
     let view = &self.proc_view;
     draw_scrollbar(f, area, body, view.row_count(), view.offset);
-    render_bottom_border(f, area, self.footer_hints(), |_| view.border_text(power_shown));
+    let mut hints = self.footer_hints();
+    if view.paused {
+      hints.insert(0, vec![theme::paused()]);
+    }
+    render_bottom_border(f, area, hints, |_| view.border_text(power_shown));
   }
 
   /// Header row and process rows in `inner`, or "collecting…" until the first sample. Returns the
@@ -1001,9 +994,15 @@ impl App {
       let y = body.y + i as u16;
       let cells = columns.iter().map(|&(column, _)| self.proc_cell(column, proc));
       draw_row(buf, Rect { y, height: 1, ..table }, &columns, cells);
+      if self.proc_view.exited(proc) {
+        buf.set_style(Rect { y, height: 1, ..inner }, Style::new().add_modifier(Modifier::DIM));
+      }
       // from border to border, so the row reads as one bar
       if selected {
-        buf.set_style(Rect { y, height: 1, ..inner }, theme::SELECTED);
+        buf.set_style(
+          Rect { y, height: 1, ..inner },
+          theme::SELECTED.remove_modifier(Modifier::DIM),
+        );
       }
     }
 
@@ -1020,16 +1019,7 @@ impl App {
     }
     match column {
       ProcSort::Pid => text(proc.pid.to_string()),
-      ProcSort::Name => {
-        let prefix = if self.proc_view.exited(proc) {
-          "(exited) "
-        } else if self.proc_view.new.contains(&identity(proc)) {
-          "(new) "
-        } else {
-          ""
-        };
-        text(format!("{prefix}{}", proc.name))
-      }
+      ProcSort::Name => text(proc.name.clone()),
       ProcSort::User => text(proc.user.clone()),
       ProcSort::Cpu => pct_cell(proc.cpu_pct),
       ProcSort::Time => time_cell(proc.cpu_time_ns),
@@ -1181,6 +1171,31 @@ mod tests {
   }
 
   #[test]
+  fn paused_startup_uses_sorted_first_sample() {
+    let mut view = ProcView::default();
+    press(&mut view, KeyCode::Char(' '));
+    view.set_procs(sample());
+    assert_eq!(pids(&view), [4410, 631, 2301, 1, 77]);
+    assert!(view.paused && view.exited.is_empty());
+  }
+
+  #[test]
+  fn paused_explicit_sort_reorders_once_and_keeps_selection() {
+    let mut view = view();
+    press(&mut view, KeyCode::Down);
+    let selected = view.selected_pid();
+    press(&mut view, KeyCode::Char(' '));
+    press(&mut view, KeyCode::Char('S'));
+    assert_eq!(pids(&view), [77, 1, 2301, 631, 4410]);
+    assert!(view.paused);
+    assert_eq!(view.selected_pid(), selected);
+    let mut next = sample();
+    next[0].cpu_pct = 100.0;
+    view.set_procs(next);
+    assert_eq!(pids(&view), [77, 1, 2301, 631, 4410]);
+  }
+
+  #[test]
   fn pause_keeps_slots_live_values_and_selection_until_resume() {
     let mut view = view();
     view.fit(3);
@@ -1195,20 +1210,15 @@ mod tests {
     next[0].cpu_pct = 99.0;
     next.push(proc(9000, "added", 100.0, 10, None, 0.0));
     view.set_procs(next);
-    assert_eq!(pids(&view), [before, vec![9000]].concat());
+    assert_eq!(pids(&view), before);
     assert_eq!(view.selected_pid(), Some(selected));
     assert!(view.exited(view.selected().unwrap()));
     assert_eq!(view.offset, offset);
     assert_eq!(view.rows().find(|p| p.pid == 1).unwrap().cpu_pct, 99.0);
-    assert!(view.new.contains(&(9000, None)));
-    let held = pids(&view);
-    press(&mut view, KeyCode::Char('S'));
-    assert_eq!(pids(&view), held);
     view.set_procs(sample());
-    assert!(view.exited(view.rows().last().unwrap()));
     press(&mut view, KeyCode::Char(' '));
-    assert!(!view.paused && view.new.is_empty() && view.exited.is_empty());
-    assert_eq!(pids(&view), [77, 1, 2301, 631, 4410]);
+    assert!(!view.paused && view.exited.is_empty());
+    assert_eq!(pids(&view), [4410, 631, 2301, 1, 77]);
     assert_eq!(view.selected_pid(), Some(selected));
   }
 
@@ -1226,12 +1236,14 @@ mod tests {
     new.started = Some((2, 0));
     new.cpu_pct = 50.0;
     view.set_procs(vec![new.clone()]);
-    assert_eq!(pids(&view), [123, 123]);
+    assert_eq!(pids(&view), [123]);
     assert_eq!(view.selected().unwrap().started, Some((1, 0)));
     assert!(view.exited(view.selected().unwrap()));
-    assert_eq!((view.groups[0].count, view.groups[0].cpu_pct), (1, 50.0));
+    assert_eq!((view.groups[0].count, view.groups[0].cpu_pct), (0, 0.0));
     press(&mut view, KeyCode::Char(' '));
     assert_eq!(view.selected(), None, "PID reuse must not steal selection");
+    assert_eq!(view.procs(), Some([].as_slice()));
+    view.set_procs(vec![new.clone()]);
     assert_eq!(view.procs(), Some([new].as_slice()));
     press(&mut view, KeyCode::Char(' '));
     view.clear();
@@ -1243,8 +1255,7 @@ mod tests {
     let mut view = ProcView::default();
     press(&mut view, KeyCode::Char(' '));
     view.set_procs(sample());
-    assert_eq!(pids(&view), [1, 631, 2301, 4410, 77]);
-    assert_eq!(view.new.len(), 5);
+    assert_eq!(pids(&view), [4410, 631, 2301, 1, 77]);
     press(&mut view, KeyCode::Char(' '));
     type_str(&mut view, "/safari, cargo");
     press(&mut view, KeyCode::Enter);
@@ -1261,8 +1272,53 @@ mod tests {
       ["cargo", "safari"]
     );
     assert_eq!(view.groups[1].cpu_pct, 100.0);
-    press(&mut view, KeyCode::Char(' '));
+    press(&mut view, KeyCode::Char('S'));
+    assert!(view.paused);
+    assert_eq!(view.groups[0].term, "cargo");
+    press(&mut view, KeyCode::Char('S'));
     assert_eq!(view.groups[0].term, "safari");
+    let mut next = sample();
+    next[3].cpu_pct = 200.0;
+    view.set_procs(next);
+    assert_eq!(view.groups[0].term, "safari");
+    press(&mut view, KeyCode::Char(' '));
+    assert_eq!(view.groups[0].term, "cargo");
+  }
+
+  #[test]
+  fn paused_empty_sample_stays_empty_and_resume_accepts_arrivals() {
+    let mut view = ProcView::default();
+    view.set_procs(vec![]);
+    view.toggle_pause();
+    view.set_procs(sample());
+    assert_eq!(view.row_count(), 0);
+    view.toggle_pause();
+    assert_eq!(view.row_count(), 0);
+    view.set_procs(sample());
+    assert_eq!(view.row_count(), 5);
+  }
+
+  #[test]
+  fn paused_header_click_sorts_held_rows_and_preserves_selection() {
+    let mut view = view();
+    view.select(1);
+    let selected = view.selected_pid();
+    view.toggle_pause();
+    view.targets.headers = column_areas(Rect::new(2, 1, 150, 1), &fit_columns(150, view.sort));
+    for column in super::COLUMNS {
+      let (_, rect) = view.targets.headers.iter().find(|(sort, _)| *sort == column).unwrap();
+      view.handle_mouse(super::MouseEvent {
+        kind: super::MouseEventKind::Down(super::MouseButton::Left),
+        column: rect.x,
+        row: rect.y,
+        modifiers: KeyModifiers::NONE,
+      });
+      let mut expected = sample();
+      super::sort_procs(&mut expected, column, view.sort_desc);
+      assert_eq!(pids(&view), expected.iter().map(|p| p.pid).collect::<Vec<_>>());
+      assert!(view.paused);
+      assert_eq!(view.selected_pid(), selected);
+    }
   }
 
   #[test]
@@ -1279,12 +1335,22 @@ mod tests {
       (ProcSort::Pid, [4410, 2301, 631, 77, 1], [1, 77, 631, 2301, 4410]),
       // case-insensitive
       (ProcSort::Name, [631, 77, 2301, 1, 4410], [4410, 1, 2301, 77, 631]),
+      (ProcSort::User, [1, 77, 631, 2301, 4410], [1, 77, 631, 2301, 4410]),
     ];
 
     for (sort, desc, asc) in cases {
       let mut view = ProcView::new(sort, true);
       view.set_procs(sample());
       assert_eq!(pids(&view), desc, "{sort:?} desc");
+      view.select(0);
+      let selected = view.selected_pid();
+      view.toggle_pause();
+      view.reverse_sort();
+      assert_eq!(pids(&view), asc, "{sort:?} paused asc");
+      view.reverse_sort();
+      assert_eq!(pids(&view), desc, "{sort:?} paused desc");
+      assert!(view.paused);
+      assert_eq!(view.selected_pid(), selected);
 
       let mut view = ProcView::new(sort, false);
       view.set_procs(sample());
@@ -1298,6 +1364,7 @@ mod tests {
     // before the first render every column, each in its own direction: numbers largest first,
     // PIDs and text from the start
     let mut view = view();
+    view.toggle_pause();
     let mut sorts = vec![];
     for _ in 0..8 {
       assert!(press(&mut view, KeyCode::Char('s')));
@@ -1482,6 +1549,7 @@ mod tests {
     type_str(&mut view, "saf, cargo, window");
     assert!(press(&mut view, KeyCode::Enter));
     assert_eq!(terms(&view), ["cargo", "window", "saf"]);
+    view.toggle_pause();
     assert!(press(&mut view, KeyCode::Char('S')));
     assert_eq!(terms(&view), ["saf", "window", "cargo"]);
 

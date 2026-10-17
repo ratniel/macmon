@@ -28,6 +28,11 @@ pub(super) fn heading<'a>(text: impl Into<Cow<'a, str>>) -> Span<'a> {
   Span::styled(text, Style::new().fg(TEXT).add_modifier(Modifier::BOLD))
 }
 
+/// Paused process or file browsing: prominent on the bottom border.
+pub(super) fn paused() -> Span<'static> {
+  Span::styled("paused", Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+}
+
 /// Text in the default color. The color is set, not left out, so text drawn over a border doesn't
 /// take the border's color.
 pub(super) fn text<'a>(text: impl Into<Cow<'a, str>>) -> Span<'a> {
