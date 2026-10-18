@@ -79,52 +79,22 @@ Options:
 
 ### Interactive mode
 
-Run `macmon` without a subcommand to open the terminal interface.
-The app shows system metrics above the process list.
+Run `macmon` without a subcommand to open the terminal interface. System metrics appear above the process list.
 Press `?` to show the keys.
 
-Press `Space` to pause the process list.
-The app keeps the same processes in the list. Process values and system metrics continue to update.
-Exited rows stay in place with dim text and `-` for unavailable values.
-A selected exited row has a dim red PID.
-The bold yellow `paused` label appears on the bottom border.
-Press `Space` again to resume.
-New processes appear on the next sample after resume.
+Press `Space` to pause or resume the process list. Process values and system metrics continue to update while paused.
+New processes appear on the next sample after resume. The file and socket list stops updating while paused.
+Sorting still works while paused. Each sort changes the row order once and keeps the list paused.
 
-To sort while paused:
+Exited rows stay in place with dim text and `-` for unavailable values. A selected exited row has a dim red PID.
+The bottom border shows `paused` in bold yellow.
 
-- Click a column header to sort by that column.
-- Press `s` to sort by the next visible column.
-- Press `S` to reverse the sort direction.
+Press `/` to filter process names or PIDs. The filter ignores differences between uppercase and lowercase letters.
+Separate terms with commas: `safari, cargo` shows matches for either term. Start a term with `!` to exclude matches: `chrome, !helper` excludes helper processes.
+Press `Enter` to keep the filter. Press `Esc` to clear it.
 
-Each sort changes the row order once. The list stays paused.
-Selection stays on the same process.
-If you pause before the first sample, the app sorts that sample when it arrives.
-
-Press `i` to open the selected process's files and sockets.
-This file list stops updating while paused.
-`Space` controls the same pause in both views.
-Hiding the process list ends the pause.
-
-Press `/` to enter a process filter.
-The filter matches process names and PIDs.
-It ignores differences between uppercase and lowercase letters.
-Separate filter terms with commas. For example, `safari, cargo` shows matches for either term.
-Start a term with `!` to exclude matches. For example, `chrome, !helper` excludes helper processes.
-
-- Press `Enter` to keep the filter.
-- Press `Esc` to clear the filter.
-- Press `f` outside filter input to turn the filter off.
-- Press `f` again to turn the filter on.
-- Press `/` to turn the filter on and edit its text.
-
-The app keeps the filter text when the filter is off. This text appears dim.
-The process list and file list have separate filters.
-While you edit a filter, `Space` and `f` enter text.
-
-The app identifies a process by its PID and available start time.
-Start times are unavailable for some processes owned by other users.
-The app cannot detect PID reuse for those processes.
+Press `f` outside filter input to turn the filter off or on. The app keeps its text and shows it dim while off.
+Press `/` to turn the filter on and edit its text. The process list and file list have separate filters.
 
 ### JSON output
 

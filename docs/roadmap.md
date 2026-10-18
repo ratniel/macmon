@@ -62,7 +62,7 @@ POWER does today.
       New processes appear after resume. Bold yellow `paused` appears on the bottom border.
       The file list stops updating while paused. `f` turns each filter off or on and keeps its text.
       Upstream PR: [#108](https://github.com/vladkens/macmon/pull/108).
-      Plan: [docs/plans/completed/20261017-pause-review.md](plans/completed/20261017-pause-review.md).
+      Plan: [docs/plans/completed/20261017-pause-and-filter.md](plans/completed/20261017-pause-and-filter.md).
 - [ ] **11. Who has a file open.** A view of the open files of all processes with the filter,
       to find who reads or writes a file or holds a port (Sloth's main window, `lsof <path>`).
       Without root libproc reads only the user's own processes; other users' processes are
