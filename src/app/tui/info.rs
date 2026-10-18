@@ -311,10 +311,7 @@ impl Info {
   /// border (not while typing).
   pub(super) fn render(&mut self, f: &mut Frame, area: Rect, paused: bool) {
     f.render_widget(Clear, area);
-    let mut name = vec![heading(self.proc.name.clone()), text(format!(" {}", self.proc.pid))];
-    if paused {
-      name.splice(0..0, [heading("paused"), text(" · ")]);
-    }
+    let name = vec![heading(self.proc.name.clone()), text(format!(" {}", self.proc.pid))];
     let titles = Titles::new(name);
     let rows = self.rows();
     let actions = || join([hint("c", "copy"), hint("e", "finder")]);
@@ -354,11 +351,14 @@ impl Info {
     }
     draw_scrollbar(f, area, list, len, self.offset);
 
-    // help and back as on the main footer, `copied` after `c`; nothing while typing (the filter
-    // keys are on the divider)
-    if !self.typing && area.height >= 2 {
+    // Filter keys stay on the divider while typing; paused remains visible on the bottom.
+    if area.height >= 2 {
+      let mut hints = if self.typing { vec![] } else { vec![hint("?", ""), hint("q", "back")] };
+      if paused {
+        hints.insert(0, vec![theme::paused()]);
+      }
       let copied = if self.copied { vec![faint("copied")] } else { vec![] };
-      render_bottom_border(f, area, vec![hint("?", ""), hint("q", "back")], |_| copied);
+      render_bottom_border(f, area, hints, |_| copied);
     }
   }
 }
