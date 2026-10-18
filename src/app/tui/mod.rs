@@ -1710,11 +1710,23 @@ mod tests {
     assert!(exited.contains("WindowServer") && !exited.contains("(exited)"), "{exited}");
     assert_eq!(exited.split_whitespace().filter(|s| *s == "-").count(), 5);
     assert!(!screen_text(&buf).contains("new worker"));
-    assert!(buf[(2, PROC_Y + 2)].modifier.contains(Modifier::REVERSED));
-    assert!(!buf[(2, PROC_Y + 2)].modifier.contains(Modifier::DIM));
+    let pid = &buf[(2, PROC_Y + 2)];
+    assert_eq!(pid.fg, ratatui::style::Color::Red);
+    assert!(pid.modifier.contains(Modifier::DIM));
+    assert!(!pid.modifier.contains(Modifier::REVERSED));
+    let name_x = exited[..exited.find("WindowServer").unwrap()].chars().count() as u16;
+    let name = &buf[(name_x, PROC_Y + 2)];
+    assert!(name.modifier.contains(Modifier::REVERSED));
+    assert!(!name.modifier.contains(Modifier::DIM));
+    assert_eq!(name.fg, theme::TEXT);
     assert!(press(&mut app, KeyCode::Down).is_continue());
     let dimmed = render_buffer(&mut app, 200, 50);
     assert!(dimmed[(2, PROC_Y + 2)].modifier.contains(Modifier::DIM));
+    assert_ne!(dimmed[(2, PROC_Y + 2)].fg, ratatui::style::Color::Red);
+    let live_pid = &dimmed[(2, PROC_Y + 3)];
+    assert_eq!(live_pid.fg, theme::TEXT);
+    assert!(live_pid.modifier.contains(Modifier::REVERSED));
+    assert!(!live_pid.modifier.contains(Modifier::DIM));
     assert!(press(&mut app, KeyCode::Up).is_continue());
     for width in [200, 60, 30, 20, 12] {
       let mut term = Terminal::new(TestBackend::new(width, 50)).unwrap();

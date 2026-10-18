@@ -56,11 +56,12 @@ POWER does today.
       `c` copying the selected path (the executable in the list, the row's full text in the info
       overlay); `? | q back` on the overlay's bottom border.
       Plan: [docs/plans/completed/20261012-list-scroll.md](plans/completed/20261012-list-scroll.md).
-- [x] **10. Pause and filter off.** Space holds process membership and order while process
-      and system values keep updating. Explicit sorting works while paused. Exited rows stay
-      dimmed; new processes appear after resume. Bold yellow `paused` sits on the bottom border.
-      The info overlay holds its files/socket snapshot. `f` turns each view's filter off and on
-      while preserving its text. Upstream PR: [#108](https://github.com/vladkens/macmon/pull/108).
+- [x] **10. Pause and filter off.** Space keeps the same processes and row order.
+      Process values and system metrics continue to update. Sorting works while paused.
+      Exited rows stay dim. A selected exited row has a dim red PID.
+      New processes appear after resume. Bold yellow `paused` appears on the bottom border.
+      The file list stops updating while paused. `f` turns each filter off or on and keeps its text.
+      Upstream PR: [#108](https://github.com/vladkens/macmon/pull/108).
       Plan: [docs/plans/completed/20261017-pause-review.md](plans/completed/20261017-pause-review.md).
 - [ ] **11. Who has a file open.** A view of the open files of all processes with the filter,
       to find who reads or writes a file or holds a port (Sloth's main window, `lsof <path>`).

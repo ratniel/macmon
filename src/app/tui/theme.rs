@@ -18,6 +18,9 @@ pub(super) const KEY: Color = Color::Cyan;
 /// Selected process row: reverse video over the default colors, so the row reads as one bar
 /// instead of reversing each load color in it.
 pub(super) const SELECTED: Style = Style::new().fg(TEXT).add_modifier(Modifier::REVERSED);
+/// Exited PID on a selected row: dim red text on the normal terminal background.
+pub(super) const SELECTED_EXITED_PID: Style =
+  Style::new().fg(Color::Red).add_modifier(Modifier::DIM).remove_modifier(Modifier::REVERSED);
 
 /// Steps of the load gradient: green up to `GREEN_MAX`, yellow up to `YELLOW_MAX`, red above.
 const GREEN_MAX: f64 = 1.0 / 3.0;

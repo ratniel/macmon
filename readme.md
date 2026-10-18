@@ -79,13 +79,52 @@ Options:
 
 ### Interactive mode
 
-Run `macmon` without a subcommand to open the terminal UI: the metric boxes on top and the process list below. Press `?` in the app to see the keys.
+Run `macmon` without a subcommand to open the terminal interface.
+The app shows system metrics above the process list.
+Press `?` to show the keys.
 
-Press `Space` to pause the process list while its values and system metrics keep updating. The rows stay in place; exited processes are dimmed with unavailable values shown as `-`. New processes appear on the next sample after resuming. Press `Space` again to resume. A bold yellow `paused` on the bottom border shows when the list is paused.
+Press `Space` to pause the process list.
+The app keeps the same processes in the list. Process values and system metrics continue to update.
+Exited rows stay in place with dim text and `-` for unavailable values.
+A selected exited row has a dim red PID.
+The bold yellow `paused` label appears on the bottom border.
+Press `Space` again to resume.
+New processes appear on the next sample after resume.
 
-Click a column header, or use `s` / `S`, to sort once while staying paused. If you pause before the first sample arrives, that sample becomes the sorted starting list. The info overlay holds its file/socket snapshot while paused; Space there controls the same pause. Hiding the process panel resets pause. Process identities use PID and available start time; other users’ processes lack start times, so their PID reuse cannot be detected.
+To sort while paused:
 
-Press `/` to filter the process list. A filter is a comma-separated list of terms, each matched case-insensitively against the process name or pid: `safari, cargo` shows processes matching any term, and a term starting with `!` hides its matches (`chrome, !helper`). `Enter` keeps the filter, `Esc` clears it. Press `f` outside filter input to turn the filter off or on without losing its text; the saved text is faint while the filter is off. The process list and file overlay have separate filters. Press `/` to enable and edit the current filter again.
+- Click a column header to sort by that column.
+- Press `s` to sort by the next visible column.
+- Press `S` to reverse the sort direction.
+
+Each sort changes the row order once. The list stays paused.
+Selection stays on the same process.
+If you pause before the first sample, the app sorts that sample when it arrives.
+
+Press `i` to open the selected process's files and sockets.
+This file list stops updating while paused.
+`Space` controls the same pause in both views.
+Hiding the process list ends the pause.
+
+Press `/` to enter a process filter.
+The filter matches process names and PIDs.
+It ignores differences between uppercase and lowercase letters.
+Separate filter terms with commas. For example, `safari, cargo` shows matches for either term.
+Start a term with `!` to exclude matches. For example, `chrome, !helper` excludes helper processes.
+
+- Press `Enter` to keep the filter.
+- Press `Esc` to clear the filter.
+- Press `f` outside filter input to turn the filter off.
+- Press `f` again to turn the filter on.
+- Press `/` to turn the filter on and edit its text.
+
+The app keeps the filter text when the filter is off. This text appears dim.
+The process list and file list have separate filters.
+While you edit a filter, `Space` and `f` enter text.
+
+The app identifies a process by its PID and available start time.
+Start times are unavailable for some processes owned by other users.
+The app cannot detect PID reuse for those processes.
 
 ### JSON output
 

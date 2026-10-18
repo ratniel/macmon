@@ -1003,6 +1003,13 @@ impl App {
           Rect { y, height: 1, ..inner },
           theme::SELECTED.remove_modifier(Modifier::DIM),
         );
+        if self.proc_view.exited(proc)
+          && let Some((_, pid)) = column_areas(Rect { y, height: 1, ..table }, &columns)
+            .into_iter()
+            .find(|(column, _)| *column == ProcSort::Pid)
+        {
+          buf.set_style(pid, theme::SELECTED_EXITED_PID);
+        }
       }
     }
 
